@@ -1,0 +1,13 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: go-hello-app
+spec:
+  replicas: 1
+  template:
+    spec:
+      containers:
+        - name: go-hello-app
+          env:
+            - name: APP_ENV
+              value: "staging"
