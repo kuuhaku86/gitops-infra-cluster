@@ -14,9 +14,21 @@ spec:
     spec:
       containers:
         - name: go-hello-app
-          image: ghcr.io/kuuhaku86/go-hello-app
+          image: ghcr.io/kuuhaku86/go-hello-app  # tag managed by ArgoCD Image Updater
           ports:
             - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
           env:
             - name: APP_ENV
               value: "base"

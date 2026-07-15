@@ -9,6 +9,8 @@ spec:
     repoURL: https://github.com/kuuhaku86/gitops-infra-cluster
     targetRevision: main
     path: argocd-apps/
+    directory:
+      recurse: true
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

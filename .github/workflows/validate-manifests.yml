@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Kustomize
-        uses: fluxcd/pkg/actions/kustomize@main
+        uses: fluxcd/pkg/actions/kustomize@v0.12.0
         with:
           version: 5.4.3
 
@@ -26,6 +26,9 @@ jobs:
 
       - name: Validate production overlay
         run: kustomize build apps/overlays/prod/
+
+      - name: Install PyYAML
+        run: pip install pyyaml
 
       - name: Check YAML syntax
         run: |
