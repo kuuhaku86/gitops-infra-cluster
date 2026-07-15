@@ -13,32 +13,32 @@ A GitOps-powered multi-environment pipeline running on a local VM using **k3d** 
 
 ```
  ┌──────────────────────────────────────────────┐
- │                 GitHub                        │
+ │                 GitHub                       │
  │  ┌─────────────────┐  ┌─────────────────────┐│
- │  │ go-hello-app    │  │ gitops-infra-cluster ││
- │  │ (GitHub Actions)│  │ (manifests)          ││
+ │  │ go-hello-app    │  │ gitops-infra-cluster││
+ │  │ (GitHub Actions)│  │ (manifests)         ││
  │  └────────┬────────┘  └──────────┬──────────┘│
  └───────────┼──────────────────────┼───────────┘
              │ push image           │ polled by ArgoCD
              ▼                      ▼
-    ┌────────────────┐    ┌──────────────────────────────┐
-    │  ghcr.io        │    │        VM (k3d)              │
-    │  go-hello-app   │    │                              │
-    └────────┬───────┘    │  ┌────────────────────────┐  │
-             │            │  │     cluster-hub         │  │
-             │ poll       │  │  ┌───────────────────┐  │  │
-             ▼            │  │  │ ArgoCD            │  │  │
-    ┌────────────────┐    │  │ │ ArgoCD Image Updater│  │  │
-    │ Image Updater  │    │  │ └───────┬───────────┘  │  │
-    │ auto-updates   │    │  └─────────┼──────────────┘  │
-    │ image tag in   │    │            │ deploy          │
-    │ kustomization  │    │    ┌───────┴───────┐         │
-    └────────────────┘    │    ▼               ▼         │
-                          │ ┌────────┐   ┌─────────┐    │
-                          │ │staging │   │  prod   │    │
-                          │ │1 repl  │   │3 repl   │    │
-                          │ └────────┘   └─────────┘    │
-                          └──────────────────────────────┘
+    ┌────────────────┐    ┌─────────────────────────────────┐
+    │  ghcr.io       │    │        VM (k3d)                 │
+    │  go-hello-app  │    │                                 │
+    └────────┬───────┘    │  ┌───────────────────────────┐  │
+             │            │  │     cluster-hub           │  │
+             │ poll       │  │ ┌──────────────────────┐  │  │
+             ▼            │  │ │ ArgoCD               │  │  │
+    ┌────────────────┐    │  │ │ ArgoCD Image Updater │  │  │
+    │ Image Updater  │    │  │ └───────┬──────────────┘  │  │
+    │ auto-updates   │    │  └─────────┼─────────────────┘  │
+    │ image tag in   │    │            │ deploy             │
+    │ kustomization  │    │    ┌───────┴───────┐            │
+    └────────────────┘    │    ▼               ▼            │
+                          │ ┌────────┐   ┌─────────┐        │
+                          │ │staging │   │  prod   │        │
+                          │ │1 repl  │   │3 repl   │        │
+                          │ └────────┘   └─────────┘        │
+                          └─────────────────────────────────┘
 ```
 
 ---
@@ -62,6 +62,7 @@ A GitOps-powered multi-environment pipeline running on a local VM using **k3d** 
 ```
 
 This creates a shared Docker network (`gitops-net`) and three k3d clusters:
+
 - `k3d-hub` (API on :6443) — runs ArgoCD
 - `k3d-staging` (API on :6444) — staging environment
 - `k3d-prod` (API on :6445) — production environment
@@ -142,19 +143,25 @@ curl http://localhost:8082
 ## CI/CD Pipeline
 
 ### App Repo → Image Registry
+
 The companion app repository (`go-hello-app`) uses GitHub Actions to:
+
 1. Build the Go binary with version injection
 2. Build a multi-stage Docker image (<10MB final size)
 3. Push to `ghcr.io/kuuhaku86/go-hello-app` with tag `YYYY-MM-DD_HH-mm-ss` and `latest`
 
 ### Registry → Cluster (Image Updater)
+
 ArgoCD Image Updater polls `ghcr.io/kuuhaku86/go-hello-app` using the `newest-build` strategy. When it detects a new image tag:
+
 1. Updates the `newTag` field in `apps/overlays/<env>/kustomization.yaml`
 2. Commits the change back to this repository (`write-back-method: git`)
 3. ArgoCD detects the git change and triggers a rolling update on the target cluster
 
 ### Manifest Validation (This Repo)
+
 On every push and PR to `main`, GitHub Actions validates:
+
 - `kustomize build` for all three kustomization directories
 - YAML syntax check for ArgoCD Application CRDs
 
