@@ -1,0 +1,35 @@
+name: Validate Manifests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Kustomize
+        uses: fluxcd/pkg/actions/kustomize@main
+        with:
+          version: 5.4.3
+
+      - name: Validate base
+        run: kustomize build apps/base/
+
+      - name: Validate staging overlay
+        run: kustomize build apps/overlays/staging/
+
+      - name: Validate production overlay
+        run: kustomize build apps/overlays/prod/
+
+      - name: Check YAML syntax
+        run: |
+          for f in argocd-apps/*.yaml; do
+            echo "=== $f ==="
+            python3 -c "import yaml; yaml.safe_load(open('$f'))" && echo "OK"
+          done
