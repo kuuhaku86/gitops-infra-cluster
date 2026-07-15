@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: go-hello-app-prod
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/kuuhaku86/gitops-infra-cluster
+    targetRevision: main
+    path: apps/overlays/prod
+  destination:
+    server: https://k3d-prod-server-0:6443
+    namespace: go-hello-app-prod
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

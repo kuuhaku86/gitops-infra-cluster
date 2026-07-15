@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: go-hello-app-staging
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/kuuhaku86/gitops-infra-cluster
+    targetRevision: main
+    path: apps/overlays/staging
+  destination:
+    server: https://k3d-staging-server-0:6443
+    namespace: go-hello-app-staging
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
