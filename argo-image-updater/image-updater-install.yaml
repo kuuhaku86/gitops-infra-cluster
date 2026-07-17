@@ -2,7 +2,7 @@
 # Source: https://github.com/argoproj-labs/argocd-image-updater
 #
 # Apply with:
-#   kubectl apply -n argocd -f https://github.com/argoproj-labs/argocd-image-updater/releases/latest/download/install.yaml
+#   kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/master/config/install.yaml
 #
 # After installation, add the following annotations to each spoke Application CRD
 # to enable automatic image updates:

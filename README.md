@@ -113,7 +113,7 @@ ArgoCD will automatically discover `staging-app.yaml` and `prod-app.yaml` and sy
 ### 7. Install ArgoCD Image Updater
 
 ```bash
-kubectl apply -n argocd -f https://github.com/argoproj-labs/argocd-image-updater/releases/latest/download/install.yaml
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/master/config/install.yaml
 ```
 
 Add Image Updater annotations to the staging and prod Application CRDs (see `argo-image-updater/image-updater-install.yaml` for the exact annotations).
