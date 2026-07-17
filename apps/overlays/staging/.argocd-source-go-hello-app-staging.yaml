@@ -1,0 +1,3 @@
+kustomize:
+  images:
+  - ghcr.io/kuuhaku86/go-hello-app=ghcr.io/kuuhaku86/go-hello-app:latest
