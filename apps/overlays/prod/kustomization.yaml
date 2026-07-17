@@ -3,6 +3,7 @@ kind: Kustomization
 namespace: go-hello-app-prod
 nameSuffix: -prod
 resources:
+  - namespace.yaml
   - ../../base
 patches:
   - path: patches.yaml
