@@ -1,0 +1,35 @@
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: go-hello-app-updater
+  namespace: argocd
+spec:
+  writeBackConfig:
+    method: git:secret:argocd/git-creds
+    gitConfig:
+      branch: main
+  commonUpdateSettings:
+    pullSecret: pullsecret:argocd/ghcr-creds
+  applicationRefs:
+    - namePattern: go-hello-app-staging
+      images:
+        - alias: app
+          imageName: ghcr.io/kuuhaku86/go-hello-app:latest
+          commonUpdateSettings:
+            updateStrategy: alphabetical
+            ignoreTags:
+              - latest
+          manifestTargets:
+            kustomize:
+              name: ghcr.io/kuuhaku86/go-hello-app
+    - namePattern: go-hello-app-prod
+      images:
+        - alias: app
+          imageName: ghcr.io/kuuhaku86/go-hello-app:latest
+          commonUpdateSettings:
+            updateStrategy: alphabetical
+            ignoreTags:
+              - latest
+          manifestTargets:
+            kustomize:
+              name: ghcr.io/kuuhaku86/go-hello-app
