@@ -3,7 +3,6 @@ kind: Kustomization
 namespace: go-hello-app-staging
 nameSuffix: -staging
 resources:
-  - namespace.yaml
   - ../../base
 patches:
   - path: patches.yaml
