@@ -7,6 +7,6 @@ resources:
   - ../../base
 images:
   - name: ghcr.io/kuuhaku86/go-hello-app
-    newTag: latest
+    newTag: "2026-07-17_13-53-54"
 patches:
   - path: patches.yaml
