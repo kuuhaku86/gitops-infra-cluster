@@ -15,7 +15,7 @@ spec:
     targetRevision: main
     path: apps/overlays/prod
   destination:
-    server: https://172.19.0.4:6443
+    name: prod
     namespace: go-hello-app-prod
   syncPolicy:
     automated:

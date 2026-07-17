@@ -15,7 +15,7 @@ spec:
     targetRevision: main
     path: apps/overlays/staging
   destination:
-    server: https://172.19.0.7:6443
+    name: staging
     namespace: go-hello-app-staging
   syncPolicy:
     automated:
