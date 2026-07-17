@@ -1,14 +1,27 @@
-# ArgoCD Image Updater installation
+# ArgoCD Image Updater setup
 # Source: https://github.com/argoproj-labs/argocd-image-updater
 #
-# Apply with:
+# This project uses the dev build (v99.9.9) which introduces the ImageUpdater CRD.
+# Image update policy is defined in `image-updater-cr.yaml` using the
+# ImageUpdater custom resource — NOT Application annotations (useAnnotations: false).
+#
+# Installation:
 #   kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/master/config/install.yaml
 #
-# After installation, add the following annotations to each spoke Application CRD
-# to enable automatic image updates:
+# If the ImageUpdater CRD is not included (older release), use the latest commit from master.
 #
-# annotations:
-#   argocd-image-updater.argoproj.io/image-list: app=ghcr.io/kuuhaku86/go-hello-app
-#   argocd-image-updater.argoproj.io/app.update-strategy: newest-build
-#   argocd-image-updater.argoproj.io/write-back-method: git
-#   argocd-image-updater.argoproj.io/write-back-target: kustomization
+# Required secrets (create before applying the ImageUpdater CR):
+#
+#   # Docker registry pull secret
+#   kubectl create secret docker-registry ghcr-creds -n argocd \
+#     --docker-server=ghcr.io \
+#     --docker-username=<github-username> \
+#     --docker-password=<github-pat>
+#
+#   # Git write-back credentials
+#   kubectl create secret generic git-creds -n argocd \
+#     --from-literal=username=<github-username> \
+#     --from-literal=password=<github-pat>
+#
+# After secrets are created, apply the ImageUpdater CR:
+#   kubectl apply -f argo-image-updater/image-updater-cr.yaml

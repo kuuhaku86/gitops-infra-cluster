@@ -30,9 +30,9 @@ A GitOps-powered multi-environment pipeline running on a local VM using **k3d** 
              ▼            │  │ │ ArgoCD               │  │  │
     ┌────────────────┐    │  │ │ ArgoCD Image Updater │  │  │
     │ Image Updater  │    │  │ └───────┬──────────────┘  │  │
-    │ auto-updates   │    │  └─────────┼─────────────────┘  │
-    │ image tag in   │    │            │ deploy             │
-    │ kustomization  │    │    ┌───────┴───────┐            │
+     │ auto-updates   │    │  └─────────┼─────────────────┘  │
+     │ image tag via  │    │            │ deploy             │
+     │ .argocd-source │    │    ┌───────┴───────┐            │
     └────────────────┘    │    ▼               ▼            │
                           │ ┌────────┐   ┌─────────┐        │
                           │ │staging │   │  prod   │        │
@@ -116,9 +116,37 @@ ArgoCD will automatically discover `staging-app.yaml` and `prod-app.yaml` and sy
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/master/config/install.yaml
 ```
 
-Add Image Updater annotations to the staging and prod Application CRDs (see `argo-image-updater/image-updater-install.yaml` for the exact annotations).
+> **Note:** This project uses a dev build (v99.9.9) which introduces the `ImageUpdater` CRD. The version on `master` may not include this CRD — use the latest release or a newer commit if the CRD is missing.
 
-### 8. Verify the deployment
+### 8. Create required secrets
+
+```bash
+# Docker registry pull secret (creates kubernetes.io/dockerconfigjson)
+kubectl create secret docker-registry ghcr-creds -n argocd \
+  --docker-server=ghcr.io \
+  --docker-username=kuuhaku86 \
+  --docker-password=<github-pat>
+
+# Git write-back credentials (for Image Updater to push commits)
+kubectl create secret generic git-creds -n argocd \
+  --from-literal=username=kuuhaku86 \
+  --from-literal=password=<github-pat>
+```
+
+### 9. Apply the ImageUpdater CR
+
+```bash
+kubectl apply -f argo-image-updater/image-updater-cr.yaml
+```
+
+This CR configures:
+- `alphabetical` update strategy (descending sort, picks the newest timestamp tag)
+- `ignoreTags: [latest]` to exclude the stale `latest` tag in GHCR
+- `pullsecret:argocd/ghcr-creds` for registry authentication
+- `git:secret:argocd/git-creds` write-back to push tag updates back to this repo
+- Kustomize manifest targets in `apps/overlays/<env>/.argocd-source-*.yaml`
+
+### 10. Verify the deployment
 
 ```bash
 # Check staging
@@ -127,15 +155,13 @@ kubectl port-forward svc/go-hello-app-staging -n go-hello-app-staging 8081:8080
 
 # In another terminal:
 curl http://localhost:8081
-# Output: Hello from staging
+# Returns an HTML page with environment, hostname, version, Go version, and server time
 
 # Check production
 kubectl config use-context k3d-prod
 kubectl port-forward svc/go-hello-app-prod -n go-hello-app-prod 8082:8080
 
-# In another terminal:
 curl http://localhost:8082
-# Output: Hello from production
 ```
 
 ---
@@ -148,22 +174,24 @@ The companion app repository (`go-hello-app`) uses GitHub Actions to:
 
 1. Build the Go binary with version injection
 2. Build a multi-stage Docker image (<10MB final size)
-3. Push to `ghcr.io/kuuhaku86/go-hello-app` with tag `YYYY-MM-DD_HH-mm-ss` and `latest`
+3. Push to `ghcr.io/kuuhaku86/go-hello-app` with tag `YYYY-MM-DD_HH-mm-ss`
 
 ### Registry → Cluster (Image Updater)
 
-ArgoCD Image Updater polls `ghcr.io/kuuhaku86/go-hello-app` using the `newest-build` strategy. When it detects a new image tag:
+ArgoCD Image Updater polls `ghcr.io/kuuhaku86/go-hello-app` using the `alphabetical` strategy (filters descending sort order). The `latest` tag is excluded via `ignoreTags` since it cannot be deleted from GHCR (PAT scope limitation). When it detects a new image tag:
 
-1. Updates the `newTag` field in `apps/overlays/<env>/kustomization.yaml`
-2. Commits the change back to this repository (`write-back-method: git`)
+1. Updates `.argocd-source-go-hello-app-<env>.yaml` in each overlay directory (Kustomize manifest target)
+2. Commits the change back to this repository (`write-back-method: git:secret:argocd/git-creds`)
 3. ArgoCD detects the git change and triggers a rolling update on the target cluster
 
-### Manifest Validation (This Repo)
+### Local Validation
 
-On every push and PR to `main`, GitHub Actions validates:
+Validate manifests before pushing:
 
-- `kustomize build` for all three kustomization directories
-- YAML syntax check for ArgoCD Application CRDs
+```bash
+kustomize build apps/overlays/staging
+kustomize build apps/overlays/prod
+```
 
 ---
 
@@ -179,8 +207,12 @@ On every push and PR to `main`, GitHub Actions validates:
 
 **Datetime-based tagging:** Every CI build produces an immutable, unique tag (`YYYY-MM-DD_HH-mm-ss`). This gives full auditability — you can trace any deployed version back to its build timestamp without relying on mutable tags like `latest`.
 
+**ldflags version injection:** The image tag is baked into the Go binary at compile time via `-ldflags="-X main.Version=${VERSION}"`. This means the deployed binary itself knows its version — no runtime env var or external config needed. The version is displayed on the web page alongside the environment name.
+
+**`ImageUpdater` CR over annotations:** The dev build (v99.9.9) uses a dedicated `ImageUpdater` custom resource instead of Application annotations. This separates image-update policy from application definitions and avoids managing annotations across multiple Application CRDs.
+
 ---
 
 ## Companion Repositories
 
-- **go-hello-app** — The demo Go HTTP server (`github.com/kuuhaku86/go-hello-app`). Responds with environment name and version tag.
+- **go-hello-app** — The demo Go HTTP server (`github.com/kuuhaku86/go-hello-app`). Serves an HTML page showing environment, hostname, version (injected via ldflags), Go version, and server time.
