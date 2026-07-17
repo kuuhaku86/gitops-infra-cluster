@@ -5,5 +5,8 @@ nameSuffix: -prod
 resources:
   - namespace.yaml
   - ../../base
+images:
+  - name: ghcr.io/kuuhaku86/go-hello-app
+    newTag: latest
 patches:
   - path: patches.yaml
