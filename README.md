@@ -30,9 +30,9 @@ A GitOps-powered multi-environment pipeline running on a local VM using **k3d** 
              ▼            │  │ │ ArgoCD               │  │  │
     ┌────────────────┐    │  │ │ ArgoCD Image Updater │  │  │
     │ Image Updater  │    │  │ └───────┬──────────────┘  │  │
-     │ auto-updates   │    │  └─────────┼─────────────────┘  │
-     │ image tag via  │    │            │ deploy             │
-     │ .argocd-source │    │    ┌───────┴───────┐            │
+    │ auto-updates   │    │  └─────────┼─────────────────┘  │
+    │ image tag via  │    │            │ deploy             │
+    │ .argocd-source │    │    ┌───────┴───────┐            │
     └────────────────┘    │    ▼               ▼            │
                           │ ┌────────┐   ┌─────────┐        │
                           │ │staging │   │  prod   │        │
