@@ -15,7 +15,7 @@ spec:
     targetRevision: main
     path: apps/overlays/prod
   destination:
-    server: https://k3d-prod-server-0:6443
+    server: https://172.19.0.4:6443
     namespace: go-hello-app-prod
   syncPolicy:
     automated:

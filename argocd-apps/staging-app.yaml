@@ -15,7 +15,7 @@ spec:
     targetRevision: main
     path: apps/overlays/staging
   destination:
-    server: https://k3d-staging-server-0:6443
+    server: https://172.19.0.7:6443
     namespace: go-hello-app-staging
   syncPolicy:
     automated:
