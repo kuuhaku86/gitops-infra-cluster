@@ -43,6 +43,53 @@ A GitOps-powered multi-environment pipeline running on a local VM using **k3d** 
 
 ---
 
+## Repository Structure
+
+```
+gitops-infra-cluster/
+├── argocd-apps/                  # ArgoCD Application CRDs (app-of-apps)
+│   ├── root-application.yaml     # root app — watches this dir with recurse: true
+│   ├── staging-app.yaml          # child → apps/overlays/staging → k3d-staging
+│   └── prod-app.yaml             # child → apps/overlays/prod → k3d-prod
+├── apps/
+│   ├── base/                     # shared base resources
+│   │   ├── kustomization.yaml
+│   │   ├── deployment.yaml
+│   │   └── service.yaml
+│   └── overlays/
+│       ├── staging/              # staging overlay (patches base)
+│       │   ├── kustomization.yaml
+│       │   ├── patches.yaml
+│       │   └── namespace.yaml
+│       └── prod/                 # prod overlay (patches base)
+│           ├── kustomization.yaml
+│           ├── patches.yaml
+│           └── namespace.yaml
+├── argo-image-updater/
+│   └── image-updater-cr.yaml     # ImageUpdater CR
+├── scripts/
+│   └── bootstrap.sh
+└── .github/workflows/
+    └── validate-manifests.yml
+```
+
+### Kustomize Overlay Differences
+
+| Aspect | Staging | Prod |
+|---|---|---|
+| Namespace | `go-hello-app-staging` | `go-hello-app-prod` |
+| `nameSuffix` | `-staging` | `-prod` |
+| Replicas | `1` | `3` |
+| `APP_ENV` | `staging` | `prod` |
+| CPU request | — | `50m` |
+| CPU limit | — | `200m` |
+| Memory request | — | `64Mi` |
+| Memory limit | — | `128Mi` |
+
+Both overlays reference `../../base` to inherit the shared `Deployment` and `Service`, then apply environment-specific patches via `patches.yaml`.
+
+---
+
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/engine/install/) (with your user in the `docker` group)
